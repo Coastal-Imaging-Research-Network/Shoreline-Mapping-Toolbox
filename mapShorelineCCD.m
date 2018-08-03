@@ -5,7 +5,8 @@ function sl = mapShorelineCCD(xgrid,ygrid,Iplan,transects,editoption)
 %function that maps a shoreline from a rectified planview image using the
 %Colour Channel Divergence (CCD) technique (Red minus the Blue channel - can be adapted).
 %
-%xgrid -- a 1xM array of local UTM eastings
+%xgrid -- a 1xM array of local UTM eastings (note: this is different from
+%               Argus cooedinates)
 %ygrid -- a 1xN array of local UTM northings
 %Iplan -- a MxNx3 uint8 image of the planview
 %transects -- a structure that seeds the shoreline search algorithm
@@ -14,7 +15,8 @@ function sl = mapShorelineCCD(xgrid,ygrid,Iplan,transects,editoption)
    % x-coordinates (2 x M matrix, where 1st row = start, 2nd row = end)
    % transects.y -- the start and end points of the transects
    % y-coordinates (2 x M matrix, where 1st row = start, 2nd row = end)
-%editoption == 1 if you want to manually edit the shoreline
+%editoption == 1 if you want to manually edit the shoreline (using
+%               interactive point editor)
 %
 %Created by Mitch Harley
 %June 2018
@@ -34,18 +36,18 @@ P = improfile(xgrid,ygrid,Iplan,transects.x,transects.y); %Sample pixels at tran
 [pdf_values,pdf_locs] = ksdensity(P(:,:,1)-P(:,:,3)); %find smooth pdf of CCD (Red minus Blue) channel
 xlabel_type = 'Red minus blue';
 thresh_weightings = [1/3 2/3]; %This weights the authomatic thresholding towards the sand peak (works well in SE Australia)
-[peak_values,peak_locations]=findpeaks(pdf_values,pdf_locs); %Find peaks
+%[peak_values,peak_locations]=findpeaks(pdf_values,pdf_locs); %Find peaks
 thresh_otsu = multithresh(P(:,:,1)-P(:,:,3)); %Threshold using Otsu's method
 f2 = figure;
 plot(pdf_locs,pdf_values)
 hold on
-I1 = find(peak_locations<thresh_otsu);
-[~,J1] = max(peak_values(I1));
-I2 = find(peak_locations>thresh_otsu);
-[~,J2] = max(peak_values(I2));
-plot(peak_locations([I1(J1) I2(J2)]),peak_values([I1(J1) I2(J2)]),'ro')
+I1 = find(pdf_locs<thresh_otsu);
+[~,J1] = max(pdf_values(I1));
+I2 = find(pdf_locs>thresh_otsu);
+[~,J2] = max(pdf_values(I2));
+plot(pdf_locs([I1(J1) I2(J2)]),pdf_values([I1(J1) I2(J2)]),'ro')
 %thresh = mean(peak_locations([I1(J1) I2(J2)])); %only find the last two peaks
-thresh = thresh_weightings(1)*peak_locations(I1(J1)) + thresh_weightings(2)*peak_locations(I2(J2)); %Skew average towards the positive (i.e. sand pixels)
+thresh = thresh_weightings(1)*pdf_locs(I1(J1)) + thresh_weightings(2)*pdf_locs(I2(J2)); %Skew average towards the positive (i.e. sand pixels)
 
 YL = ylim;
 plot([thresh thresh], YL,'r:','linewidth',2)
@@ -111,6 +113,9 @@ if editoption ==1
     newpos = getPosition(h);
     sl.x = newpos(:,1);
     sl.y = newpos(:,2);
+elseif editoption ==0
+    sl.x = sl.x';
+    sl.y = sl.y';
 end
 
 %Remove NaNs
