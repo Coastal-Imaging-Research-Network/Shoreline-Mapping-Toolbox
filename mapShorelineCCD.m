@@ -38,6 +38,8 @@ end
 
 %Find threshold
 P = improfile(xgrid,ygrid,Iplan,transects.x,transects.y); %Sample pixels at transects to determine threshold
+Iblack = find((P(:,:,1)-P(:,:,3))==0); %Remove black pixels from interfering with method (at edge of image)
+P(Iblack,:,:) = [];
 [pdf_values,pdf_locs] = ksdensity(P(:,:,1)-P(:,:,3)); %find smooth pdf of CCD (Red minus Blue) channel
 xlabel_type = 'Red minus blue';
 thresh_weightings = [1/3 2/3]; %This weights the authomatic thresholding towards the sand peak (works well in SE Australia)
@@ -112,7 +114,7 @@ for i = 1:length(transects.x)
     end
 end
 
-if editoption ==1
+if editoption ==1 && figoption == 1
     figure(f1)
     h = impoly(gca,[sl.x' sl.y'],'closed',0);
     disp('Please edit your shoreline now or press any key to continue')
