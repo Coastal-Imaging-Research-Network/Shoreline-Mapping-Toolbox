@@ -116,12 +116,23 @@ else
         if ~isempty(I)
             [~,Imin] = min(points_rot(I,1));
             %[~,Imin] = max(points_rot(I,1));
-            sl.x(i) = points(I(Imin),1);
-            sl.y(i) = points(I(Imin),2);
+            
+            %Do test to see if point falls in a black pixel - remove if yes
+            blacktest_tol = 2; %Tolerance in metres
+            points_blacktest = [points_rot(I(Imin),1)+blacktest_tol,points_rot(I(Imin),2)]; %Select a point that is a certain tolerance seaward of the transect to see if it is black (default 2m)
+            points_blacktest_unrot = unrotatePoints(points_blacktest,angle,[transects.x(1,i) transects.y(1,i)],'rads');
+            PP = interp2(X,Y,RminusBdouble,points_blacktest_unrot(1),points_blacktest_unrot(2)); 
+            if PP~=0 %If the "black test" pixel is not black
+                sl.x(i) = points(I(Imin),1);
+                sl.y(i) = points(I(Imin),2);
+            end         
         end
+        
     end
     
-    if editoption ==1 && figoption == 1
+    
+    
+    if editoption ==1 && plotoption == 1
         figure(f1)
         h = impoly(gca,[sl.x' sl.y'],'closed',0);
         disp('Please edit your shoreline now or press any key to continue')
