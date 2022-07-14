@@ -110,6 +110,9 @@ else
     warning off
     for i = 1:length(transects.x)
         angle = atan(diff(transects.y(:,i))/diff(transects.x(:,i)));
+        if diff(transects.x(:,i))<0 %If in SW or NW quadrant
+            angle = angle+pi; %Add 180 degrees to angle
+        end
         points_rot = rotatePoints(points,angle,[transects.x(1,i) transects.y(1,i)],'rads');
         max_distance = sqrt(diff(transects.y(:,i))^2+ diff(transects.x(:,i))^2);
         I = find(points_rot(:,2)>-1&points_rot(:,2)<1&points_rot(:,1)>0&points_rot(:,1)<max_distance); %Only find points greater than zero so that they are in the roi
